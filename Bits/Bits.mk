@@ -1,4 +1,4 @@
-EXE=Bits
+EXE=BitsProgram
 CP=g++
 PROJECT=Bits
 

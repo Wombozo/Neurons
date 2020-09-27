@@ -33,6 +33,7 @@ static void FillHiddenNeurons(void);
 static void ComputeOutput(void);
 
 static float Sigmoid(float input);
+static float SigmoidPrime(float input);
 
 // Detect if middle bit is 1
 int main(int argc, char *argv[])
