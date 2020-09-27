@@ -4,8 +4,10 @@
 
 #define INPUT_LENGTH 5
 #define NB_HIDDEN_NEURONS 3
+#define NB_TRAINING 6
+#define NB_ITERATIONS 10
 
-float _trainSet[6][INPUT_LENGTH] =
+float _trainSet[NB_TRAINING][INPUT_LENGTH] =
     {
         {0, 0, 1, 0, 1},
         {1, 1, 1, 1, 1},
@@ -14,7 +16,14 @@ float _trainSet[6][INPUT_LENGTH] =
         {0, 1, 0, 1, 0},
         {0, 1, 1, 1, 0}};
 
-float _trainExpected[6] = {1, 1, 0, 0, 0, 1};
+float _trainExpected[NB_TRAINING] = {1, 1, 0, 0, 0, 1};
+
+
+float _tested[][INPUT_LENGTH] = {
+    {0, 1, 0, 1, 0},
+    {1, 0, 1, 0, 1},
+    {1, 1, 1, 0, 0},
+};
 
 float _leftWeights[NB_HIDDEN_NEURONS][INPUT_LENGTH] = {};
 float _rightWeights[NB_HIDDEN_NEURONS] = {};
@@ -26,10 +35,10 @@ float _outputCost;
 
 float alpha = 0.1;
 
-static void ForthPropagation(void);
-static void BackPropagation(void);
+static void ForthPropagation(int entry);
+static void BackPropagation(int entry);
 static void InitializeWeights(void);
-static void FillHiddenNeurons(void);
+static void FillHiddenNeurons(int entry);
 static void ComputeOutput(void);
 
 static float Sigmoid(float input);
@@ -39,31 +48,45 @@ static float SigmoidPrime(float input);
 int main(int argc, char *argv[])
 {
     InitializeWeights();
-    ForthPropagation();
-    BackPropagation();
+    for (int it = 0; it < NB_ITERATIONS; it++)
+    {
+        for (int n = 0; n < NB_TRAINING; n++)
+        {
+            ForthPropagation(n);
+            BackPropagation(n);
+        }
+            std::cout << "ERROR = " << _outputCost << std::endl;
+    }
+
+    
     return 0;
 }
 
-static void ForthPropagation()
+static void ForthPropagation(int n)
 {
-    FillHiddenNeurons();
+    FillHiddenNeurons(n);
     ComputeOutput();
-    std::cout << "  Output = " << _output << std::endl;
 }
 
-static void BackPropagation()
+static void BackPropagation(int n)
 {
-    _outputCost = pow(_trainExpected[0] - _output,2);
+    _outputCost = pow(_trainExpected[n] - _output, 2);
     for (int h = 0; h < NB_HIDDEN_NEURONS; h++)
         _hiddenCosts[h] = _rightWeights[h] * _outputCost * SigmoidPrime(_hiddenNeurons[h]);
 
     // Reset left weights
     for (int i = 0; i < NB_HIDDEN_NEURONS; i++)
     {
-        for (int j=0; j < INPUT_LENGTH; j++)
+        for (int j = 0; j < INPUT_LENGTH; j++)
         {
-            _leftWeights[i][j] += alpha * _trainSet[0][j] * _hiddenCosts[i];
+            _leftWeights[i][j] += alpha * _trainSet[n][j] * _hiddenCosts[i];
         }
+    }
+
+    // Reset right weights
+    for (int h = 0; h < NB_HIDDEN_NEURONS; h++)
+    {
+        _rightWeights[h] += alpha * _hiddenNeurons[h] * _outputCost;
     }
 }
 
@@ -78,23 +101,22 @@ static void InitializeWeights()
     }
 }
 
-static void FillHiddenNeurons()
+static void FillHiddenNeurons(int n)
 {
     for (int j = 0; j < NB_HIDDEN_NEURONS; j++)
     {
         float neuronValue = 0;
-        for (int i = 0 ; i < INPUT_LENGTH; i++)
+        for (int i = 0; i < INPUT_LENGTH; i++)
         {
-            neuronValue += _leftWeights[j][i] * _trainSet[0][i];
+            neuronValue += _leftWeights[j][i] * _trainSet[n][i];
         }
         _hiddenNeurons[j] = Sigmoid(neuronValue);
-        std::cout << "NEURON " << j << ": " << _hiddenNeurons[j] << std::endl;
     }
 }
 
 static void ComputeOutput()
 {
-    float val=0;
+    float val = 0;
     for (int h = 0; h < NB_HIDDEN_NEURONS; h++)
         val += _rightWeights[h] * _hiddenNeurons[h];
     _output = Sigmoid(val);
@@ -107,5 +129,5 @@ static float Sigmoid(float x)
 
 static float SigmoidPrime(float x)
 {
-    return Sigmoid(x)*(1-Sigmoid(x));
+    return Sigmoid(x) * (1 - Sigmoid(x));
 }
